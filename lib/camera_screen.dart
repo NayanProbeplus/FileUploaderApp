@@ -4,6 +4,8 @@ import 'package:file_uploader_app/main.dart';
 import 'package:file_uploader_app/models/uploaded_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:dio/dio.dart';
+import 'package:path/path.dart' as path;
 
 class CameraScreen extends StatefulWidget {
   final String description;
@@ -65,26 +67,83 @@ class _CameraScreenState extends State<CameraScreen> {
     if (_images.isEmpty || _isUploading) return;
 
     setState(() => _isUploading = true);
-    await Future.delayed(const Duration(seconds: 1));
 
-    final box = Hive.box('uploads');
+    try {
+      // 🔹 1. Upload to server
+      await uploadToServer();
 
-    final uploaded = UploadedImage(
-      description: widget.description,
-      imagePaths: _images.map((e) => e.path).toList(),
-      uploadedAt: DateTime.now(),
-    );
+      // 🔹 2. Save locally to Hive (unchanged)
+      final box = Hive.box('uploads');
 
-    box.add(uploaded.toMap());
+      final uploaded = UploadedImage(
+        description: widget.description,
+        imagePaths: _images.map((e) => e.path).toList(),
+        uploadedAt: DateTime.now(),
+      );
 
-    if (!mounted) return;
+      box.add(uploaded.toMap());
 
-    setState(() {
-      _isUploading = false;
+      if (!mounted) return;
+
       _images.clear();
-    });
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Upload failed: $e")),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
+    }
+  }
 
-    Navigator.pop(context, true);
+  Future<void> uploadToServer() async {
+    try {
+      final dio = Dio();
+
+      final docsList = _images.map((img) {
+        final file = File(img.path);
+        return {
+          "file_name": path.basename(img.path),
+          "file_size": file.lengthSync().toString(),
+          "file_type": path.extension(img.path).replaceFirst('.', ''),
+        };
+      }).toList();
+
+      final formData = FormData.fromMap({
+        "patient_id": "PATIENT_001",
+        "prescription_id": widget.description,
+        "docs_list": docsList,
+        "files": _images
+            .map(
+              (img) => MultipartFile.fromFileSync(
+                img.path,
+                filename: path.basename(img.path),
+              ),
+            )
+            .toList(),
+      });
+
+      final response = await dio.post(
+        'http://10.10.3.30:9010/api/v1/documents/upload',
+        data: formData,
+        options: Options(
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        ),
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception('Server upload failed');
+      }
+    } catch (e) {
+      debugPrint("Server upload error: $e");
+      rethrow; // important
+    }
   }
 
   @override
