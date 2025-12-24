@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:file_uploader_app/AuthManager.dart';
 import 'package:file_uploader_app/camera_screen.dart';
 import 'package:file_uploader_app/constants/colors.dart';
+import 'package:file_uploader_app/login/login_screen.dart';
 import 'package:file_uploader_app/models/uploaded_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
@@ -198,6 +200,45 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // Logout function
+  Future<void> _logout() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      // Clear tokens
+      await AuthManager.logout();
+
+      if (!mounted) return;
+
+      // Navigate to login screen and remove all previous routes
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -211,6 +252,13 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white),
+            onPressed: _logout,
+            tooltip: 'Logout',
+          ),
+        ],
       ),
       body: _uploadedImages.isEmpty
           ? const Center(child: Text("No uploads yet"))
