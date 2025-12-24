@@ -16,7 +16,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final TextEditingController _textController = TextEditingController();
   List<UploadedImage> _uploadedImages = [];
 
   final TextEditingController _nameController = TextEditingController();

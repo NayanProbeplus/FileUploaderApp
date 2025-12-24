@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
+import 'package:file_uploader_app/api/file_upload_api.dart';
 import 'package:file_uploader_app/main.dart';
 import 'package:file_uploader_app/models/uploaded_image.dart';
 import 'package:flutter/material.dart';
@@ -102,47 +103,14 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Future<void> uploadToServer() async {
     try {
-      final dio = Dio();
-
-      final docsList = _images.map((img) {
-        final file = File(img.path);
-        return {
-          "file_name": path.basename(img.path),
-          "file_size": file.lengthSync().toString(),
-          "file_type": path.extension(img.path).replaceFirst('.', ''),
-        };
-      }).toList();
-
-      final formData = FormData.fromMap({
-        "patient_id": "PATIENT_001",
-        "prescription_id": widget.description,
-        "docs_list": docsList,
-        "files": _images
-            .map(
-              (img) => MultipartFile.fromFileSync(
-                img.path,
-                filename: path.basename(img.path),
-              ),
-            )
-            .toList(),
-      });
-
-      final response = await dio.post(
-        'http://10.10.3.30:9010/api/v1/documents/upload',
-        data: formData,
-        options: Options(
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        ),
+      await FileUploadApi.uploadDocuments(
+        patientId: 'PATIENT_001',
+        prescriptionId: widget.description,
+        files: _images.map((e) => File(e.path)).toList(),
       );
-
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        throw Exception('Server upload failed');
-      }
     } catch (e) {
-      debugPrint("Server upload error: $e");
-      rethrow; // important
+      debugPrint('Server upload error: $e');
+      rethrow;
     }
   }
 

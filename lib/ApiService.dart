@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_uploader_app/models/auth_response_model.dart';
 
@@ -13,8 +14,9 @@ class ApiService {
     try {
       final url = Uri.parse('$baseUrl/auth/token/login');
 
-      print('🔵 Login Request to: $url');
-      print('🔵 Request Body: {"username": "$username", "password": "***"}');
+      debugPrint('🔵 Login Request to: $url');
+      debugPrint(
+          '🔵 Request Body: {"username": "$username", "password": "***"}');
 
       final response = await http.post(
         url,
@@ -28,16 +30,16 @@ class ApiService {
         }),
       );
 
-      print('🔵 Response Status: ${response.statusCode}');
-      print('🔵 Response Body: ${response.body}');
+      debugPrint('🔵 Response Status: ${response.statusCode}');
+      debugPrint('🔵 Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
-        print('🔵 Decoded JSON: $json');
+        debugPrint('🔵 Decoded JSON: $json');
 
         // Check if data is false (invalid credentials)
         if (json['data'] == false) {
-          print('🔴 Invalid credentials - data is false');
+          debugPrint('🔴 Invalid credentials - data is false');
           return AuthResponse.error('Invalid username or password');
         }
 
@@ -49,15 +51,15 @@ class ApiService {
         // Unexpected data format
         return AuthResponse.error('Unexpected response format');
       } else {
-        print('🔴 Login failed with status: ${response.statusCode}');
-        print('🔴 Response: ${response.body}');
+        debugPrint('🔴 Login failed with status: ${response.statusCode}');
+        debugPrint('🔴 Response: ${response.body}');
         return AuthResponse.error(
           'Login failed with status: ${response.statusCode}',
         );
       }
     } catch (e, stackTrace) {
-      print('🔴 Error in login: $e');
-      print('🔴 StackTrace: $stackTrace');
+      debugPrint('🔴 Error in login: $e');
+      debugPrint('🔴 StackTrace: $stackTrace');
       return AuthResponse.error('Network error: $e');
     }
   }
@@ -69,7 +71,7 @@ class ApiService {
     try {
       final url = Uri.parse('$baseUrl/auth/token/refresh');
 
-      print('🔵 Refresh Token Request to: $url');
+      debugPrint('🔵 Refresh Token Request to: $url');
 
       final response = await http.post(
         url,
@@ -83,23 +85,24 @@ class ApiService {
         }),
       );
 
-      print('🔵 Refresh Response Status: ${response.statusCode}');
-      print('🔵 Refresh Response Body: ${response.body}');
+      debugPrint('🔵 Refresh Response Status: ${response.statusCode}');
+      debugPrint('🔵 Refresh Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
-        print('🔵 Decoded Refresh JSON: $json');
+        debugPrint('🔵 Decoded Refresh JSON: $json');
         return AuthResponse.fromJson(json);
       } else {
-        print('🔴 Token refresh failed with status: ${response.statusCode}');
-        print('🔴 Response: ${response.body}');
+        debugPrint(
+            '🔴 Token refresh failed with status: ${response.statusCode}');
+        debugPrint('🔴 Response: ${response.body}');
         return AuthResponse.error(
           'Token refresh failed with status: ${response.statusCode}',
         );
       }
     } catch (e, stackTrace) {
-      print('🔴 Error in refresh token: $e');
-      print('🔴 StackTrace: $stackTrace');
+      debugPrint('🔴 Error in refresh token: $e');
+      debugPrint('🔴 StackTrace: $stackTrace');
       return AuthResponse.error('Network error: $e');
     }
   }
