@@ -5,8 +5,6 @@ import 'package:file_uploader_app/main.dart';
 import 'package:file_uploader_app/models/uploaded_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:dio/dio.dart';
-import 'package:path/path.dart' as path;
 
 class CameraScreen extends StatefulWidget {
   final String description;
@@ -102,15 +100,37 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Future<void> uploadToServer() async {
-    try {
-      await FileUploadApi.uploadDocuments(
-        patientId: 'PATIENT_001',
-        prescriptionId: widget.description,
-        files: _images.map((e) => File(e.path)).toList(),
-      );
-    } catch (e) {
-      debugPrint('Server upload error: $e');
-      rethrow;
+    final files = _images.map((e) => File(e.path)).toList();
+
+    final docsList = files.map((file) {
+      return {
+        "file_name": file.uri.pathSegments.last,
+        "file_size": file.lengthSync().toString(),
+        "file_type": file.path.split('.').last,
+      };
+    }).toList();
+
+    // 1️⃣ Get presigned URLs
+    final response = await FileUploadApi.uploadDocuments(
+      patientId: 'PATIENT_001',
+      prescriptionId: widget.description,
+      docsList: docsList,
+    );
+
+    final Map<String, String> presignedUrls =
+        Map<String, String>.from(response['data']['doc_url']);
+
+    // 2️⃣ Upload each file to S3
+    for (final file in files) {
+      final fileName = file.uri.pathSegments.last;
+      final url = presignedUrls[fileName];
+
+      if (url != null) {
+        await S3Uploader.uploadFileToS3(
+          presignedUrl: url,
+          file: file,
+        );
+      }
     }
   }
 
