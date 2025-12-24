@@ -60,11 +60,6 @@ class AuthManager {
 
   // Logout
   static Future<void> logout() async {
-    print('');
-    print('════════════════════════════════════════════════════════');
-    print('🚪 LOGOUT FLOW STARTED');
-    print('════════════════════════════════════════════════════════');
-
     // Get refresh token before clearing
     final refreshToken = await TokenStorage.getRefreshToken();
 
@@ -101,12 +96,10 @@ class AuthManager {
   // Get authorization header for API calls
   static Future<Map<String, String>?> getAuthHeaders() async {
     final accessToken = await getValidAccessToken();
-    final tokenType = await TokenStorage.getTokenType();
 
     if (accessToken == null) return null;
-
     return {
-      'Authorization': '${tokenType ?? 'Bearer'} $accessToken',
+      'Authorization': 'Bearer $accessToken',
     };
   }
 }
