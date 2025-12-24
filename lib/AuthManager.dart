@@ -60,7 +60,37 @@ class AuthManager {
 
   // Logout
   static Future<void> logout() async {
+    print('');
+    print('════════════════════════════════════════════════════════');
+    print('🚪 LOGOUT FLOW STARTED');
+    print('════════════════════════════════════════════════════════');
+
+    // Get refresh token before clearing
+    final refreshToken = await TokenStorage.getRefreshToken();
+
+    if (refreshToken != null) {
+      print('📍 [AuthManager] Calling logout API with refresh token...');
+
+      // Call logout API
+      final result = await ApiService.logout(refreshToken: refreshToken);
+
+      if (result['success'] == true) {
+        print('✅ [AuthManager] Logout API call successful');
+      } else {
+        print('⚠️ [AuthManager] Logout API failed: ${result['error']}');
+        print('📍 [AuthManager] Continuing with local logout anyway...');
+      }
+    } else {
+      print('⚠️ [AuthManager] No refresh token found - skipping API call');
+    }
+
+    print('📍 [AuthManager] Clearing all local tokens...');
     await TokenStorage.clearTokens();
+
+    print('✅ [AuthManager] All tokens cleared');
+    print('🚪 [AuthManager] User logged out successfully');
+    print('════════════════════════════════════════════════════════');
+    print('');
   }
 
   // Check if user is authenticated

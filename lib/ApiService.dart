@@ -106,4 +106,74 @@ class ApiService {
       return AuthResponse.error('Network error: $e');
     }
   }
+
+  // Logout API
+  static Future<Map<String, dynamic>> logout({
+    required String refreshToken,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/auth/token/logout');
+
+      print('🔵 Logout Request to: $url');
+      print(
+          '🔵 Logout Request Body: {"refreshToken": "${refreshToken.substring(0, 30)}..."}');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'refreshToken': refreshToken,
+        }),
+      );
+
+      print('🔵 Logout Response Status: ${response.statusCode}');
+      print('🔵 Logout Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        print('🔵 Decoded Logout JSON: $json');
+
+        // Check if data is true (successful logout)
+        if (json['data'] == true) {
+          print('✅ Logout API successful - server session invalidated');
+          return {
+            'success': true,
+          };
+        }
+
+        // Check if data is false (invalid refresh token)
+        if (json['data'] == false) {
+          print('🔴 Logout API returned false - invalid refresh token');
+          return {
+            'success': false,
+            'error': 'Invalid refresh token',
+          };
+        }
+
+        // Unexpected data format
+        print('🔴 Unexpected logout response format');
+        return {
+          'success': false,
+          'error': 'Unexpected response format',
+        };
+      } else {
+        print('🔴 Logout failed with status: ${response.statusCode}');
+        print('🔴 Response: ${response.body}');
+        return {
+          'success': false,
+          'error': 'Logout failed with status: ${response.statusCode}',
+        };
+      }
+    } catch (e, stackTrace) {
+      print('🔴 Error in logout: $e');
+      print('🔴 StackTrace: $stackTrace');
+      return {
+        'success': false,
+        'error': 'Network error: $e',
+      };
+    }
+  }
 }
