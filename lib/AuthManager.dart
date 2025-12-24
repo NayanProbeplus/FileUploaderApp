@@ -1,5 +1,6 @@
 import 'package:file_uploader_app/ApiService.dart';
 import 'package:file_uploader_app/TokenStorage.dart';
+import 'package:flutter/material.dart';
 
 class AuthManager {
   // Get valid access token (refreshes if needed)
@@ -53,7 +54,7 @@ class AuthManager {
 
       return false;
     } catch (e) {
-      print('Error refreshing token: $e');
+      debugPrint('Error refreshing token: $e');
       return false;
     }
   }
@@ -64,28 +65,18 @@ class AuthManager {
     final refreshToken = await TokenStorage.getRefreshToken();
 
     if (refreshToken != null) {
-      print('📍 [AuthManager] Calling logout API with refresh token...');
-
       // Call logout API
       final result = await ApiService.logout(refreshToken: refreshToken);
 
       if (result['success'] == true) {
-        print('✅ [AuthManager] Logout API call successful');
       } else {
-        print('⚠️ [AuthManager] Logout API failed: ${result['error']}');
-        print('📍 [AuthManager] Continuing with local logout anyway...');
+        debugPrint('⚠️ [AuthManager] Logout API failed: ${result['error']}');
       }
     } else {
-      print('⚠️ [AuthManager] No refresh token found - skipping API call');
+      debugPrint('⚠️ [AuthManager] No refresh token found - skipping API call');
     }
 
-    print('📍 [AuthManager] Clearing all local tokens...');
     await TokenStorage.clearTokens();
-
-    print('✅ [AuthManager] All tokens cleared');
-    print('🚪 [AuthManager] User logged out successfully');
-    print('════════════════════════════════════════════════════════');
-    print('');
   }
 
   // Check if user is authenticated
